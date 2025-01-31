@@ -5,22 +5,28 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Calendar } from "./ui/calendar";
+import { Textarea } from "./ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  type?: "quarterly" | "monthly" | "weekly" | "daily";
 }
 
-export const CreateTaskDialog = ({ open, onOpenChange }: CreateTaskDialogProps) => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateTaskDialogProps) => {
+  const [selectedStartDate, setSelectedStartDate] = useState<Date | undefined>(new Date());
+  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>(new Date());
   const [category, setCategory] = useState<"professional" | "personal">("professional");
+
+  console.log("CreateTaskDialog rendered with type:", type);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            Nouvelle tâche
+            Nouvel objectif
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -44,7 +50,12 @@ export const CreateTaskDialog = ({ open, onOpenChange }: CreateTaskDialogProps) 
 
           <div className="space-y-2">
             <Label htmlFor="title">Titre</Label>
-            <Input id="title" placeholder="Nom de la tâche" />
+            <Input id="title" placeholder="Nom de l'objectif" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea id="description" placeholder="Description de l'objectif" />
           </div>
 
           <div className="space-y-2">
@@ -58,11 +69,36 @@ export const CreateTaskDialog = ({ open, onOpenChange }: CreateTaskDialogProps) 
           </div>
 
           <div className="space-y-2">
-            <Label>Date</Label>
+            <Label>Type de période</Label>
+            <Select defaultValue={type}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="quarterly">Trimestriel</SelectItem>
+                <SelectItem value="monthly">Mensuel</SelectItem>
+                <SelectItem value="weekly">Hebdomadaire</SelectItem>
+                <SelectItem value="daily">Journalier</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Date de début</Label>
             <Calendar
               mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
+              selected={selectedStartDate}
+              onSelect={setSelectedStartDate}
+              className="rounded-md border"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Date de fin</Label>
+            <Calendar
+              mode="single"
+              selected={selectedEndDate}
+              onSelect={setSelectedEndDate}
               className="rounded-md border"
             />
           </div>

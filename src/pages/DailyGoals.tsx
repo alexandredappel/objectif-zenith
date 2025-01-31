@@ -1,6 +1,10 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from "react";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
+import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 
 const DailyGoals = () => {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <header className="mb-8">
@@ -13,8 +17,15 @@ const DailyGoals = () => {
           <p className="text-gray-500">Contenu à venir...</p>
         </div>
       </main>
-    </div>
-  )
-}
 
-export default DailyGoals
+      <FloatingActionButton onClick={() => setIsCreateDialogOpen(true)} />
+      <CreateTaskDialog 
+        open={isCreateDialogOpen} 
+        onOpenChange={setIsCreateDialogOpen}
+        type="daily"
+      />
+    </div>
+  );
+};
+
+export default DailyGoals;

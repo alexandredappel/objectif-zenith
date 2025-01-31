@@ -1,6 +1,12 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
+import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 
 const PeriodGoals = () => {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [currentPeriod, setCurrentPeriod] = useState<"quarterly" | "monthly" | "weekly">("quarterly");
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <header className="mb-8">
@@ -9,7 +15,11 @@ const PeriodGoals = () => {
       </header>
 
       <main className="max-w-3xl mx-auto">
-        <Tabs defaultValue="quarterly" className="w-full">
+        <Tabs 
+          defaultValue="quarterly" 
+          className="w-full"
+          onValueChange={(value) => setCurrentPeriod(value as "quarterly" | "monthly" | "weekly")}
+        >
           <TabsList className="w-full justify-start mb-6">
             <TabsTrigger value="quarterly">Trimestriels</TabsTrigger>
             <TabsTrigger value="monthly">Mensuels</TabsTrigger>
@@ -26,8 +36,15 @@ const PeriodGoals = () => {
           </TabsContent>
         </Tabs>
       </main>
-    </div>
-  )
-}
 
-export default PeriodGoals
+      <FloatingActionButton onClick={() => setIsCreateDialogOpen(true)} />
+      <CreateTaskDialog 
+        open={isCreateDialogOpen} 
+        onOpenChange={setIsCreateDialogOpen}
+        type={currentPeriod}
+      />
+    </div>
+  );
+};
+
+export default PeriodGoals;
