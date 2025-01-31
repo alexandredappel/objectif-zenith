@@ -6,19 +6,57 @@ export const useGoalManagement = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const checkAndUpdateParentGoal = async (parentId: string) => {
+    console.log('Checking parent goal:', parentId);
+    
+    // Fetch all child goals for this parent
+    const { data: childGoals, error: childError } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('parent_id', parentId);
+
+    if (childError) {
+      console.error('Error fetching child goals:', childError);
+      return;
+    }
+
+    // If all child goals are completed, mark parent as completed
+    const allCompleted = childGoals?.every(goal => goal.completed) ?? false;
+    
+    // Update the parent goal
+    const { data: parentData, error: parentUpdateError } = await supabase
+      .from('goals')
+      .update({ completed: allCompleted })
+      .eq('id', parentId)
+      .select('parent_id')
+      .single();
+
+    if (parentUpdateError) {
+      console.error('Error updating parent goal:', parentUpdateError);
+      return;
+    }
+
+    // If this parent has its own parent, recursively check that one too
+    if (parentData?.parent_id) {
+      await checkAndUpdateParentGoal(parentData.parent_id);
+    }
+  };
+
   const toggleGoalCompletion = async (
     goalId: string, 
     currentStatus: boolean,
-    childGoals?: { id: string; completed: boolean }[] | null
+    childGoals?: { id: string; completed: boolean; parent_id: string | null }[] | null
   ) => {
     console.log('Toggling goal completion:', { goalId, currentStatus, hasChildren: !!childGoals?.length });
     
     try {
       // Update parent goal
-      const { error: parentError } = await supabase
+      const { data: updatedGoal, error: parentError } = await supabase
         .from('goals')
         .update({ completed: !currentStatus })
-        .eq('id', goalId);
+        .eq('id', goalId)
+        .select('parent_id')
+        .single();
 
       if (parentError) throw parentError;
 
@@ -41,6 +79,11 @@ export const useGoalManagement = () => {
           .in('id', childGoals.map(child => child.id));
 
         if (childError) throw childError;
+      }
+
+      // If this goal has a parent, check if we need to update its status
+      if (updatedGoal?.parent_id) {
+        await checkAndUpdateParentGoal(updatedGoal.parent_id);
       }
 
       await queryClient.invalidateQueries({ queryKey: ['goals'] });
@@ -80,16 +123,8 @@ export const useGoalManagement = () => {
 
       if (childError) throw childError;
 
-      // If we're unchecking a child, ensure the parent is also unchecked
-      if (isCompleted) {
-        console.log('Child goal unchecked, updating parent goal:', parentId);
-        const { error: parentError } = await supabase
-          .from('goals')
-          .update({ completed: false })
-          .eq('id', parentId);
-
-        if (parentError) throw parentError;
-      }
+      // Check and update the parent goal's status
+      await checkAndUpdateParentGoal(parentId);
 
       await queryClient.invalidateQueries({ queryKey: ['goals'] });
 
