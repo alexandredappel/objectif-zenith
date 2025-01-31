@@ -3,7 +3,6 @@ import { TaskCard } from '@/components/TaskCard';
 import { CategoryHeader } from '@/components/CategoryHeader';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { CreateTaskDialog } from '@/components/CreateTaskDialog';
-import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 
 const MOCK_TASKS = {
   professional: [
@@ -19,14 +18,8 @@ const MOCK_TASKS = {
 const Index = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const breadcrumbItems = [
-    { title: "Tableau de bord", href: "/" },
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <PageBreadcrumb items={breadcrumbItems} />
-      
       <header className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Bonjour 👋</h1>
         <p className="text-gray-600">Voici vos objectifs du jour</p>
