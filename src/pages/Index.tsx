@@ -103,8 +103,6 @@ const Index = () => {
                 key={task.id}
                 id={task.id}
                 title={task.title}
-                duration={task.minutes}
-                progress={0}
                 category="professional"
                 type="daily"
                 completed={task.completed || false}
@@ -124,8 +122,6 @@ const Index = () => {
                 key={task.id}
                 id={task.id}
                 title={task.title}
-                duration={task.minutes}
-                progress={0}
                 category="personal"
                 type="daily"
                 completed={task.completed || false}
