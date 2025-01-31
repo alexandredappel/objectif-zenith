@@ -98,6 +98,7 @@ export const useGoalManagement = () => {
         await checkAndUpdateParentGoal(updatedGoal.parent_id);
       }
 
+      // Invalidate all goals queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ['goals'] });
 
       toast({
@@ -138,6 +139,7 @@ export const useGoalManagement = () => {
       // Check and update the parent goal's status
       await checkAndUpdateParentGoal(parentId);
 
+      // Invalidate all goals queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ['goals'] });
 
       toast({
