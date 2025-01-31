@@ -3,7 +3,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useToast } from "./ui/use-toast";
 
 interface TaskCardProps {
@@ -14,16 +14,43 @@ interface TaskCardProps {
   category: 'professional' | 'personal';
   completed?: boolean;
   onClick?: () => void;
+  type: 'quarterly' | 'monthly' | 'weekly' | 'daily';
 }
 
-export const TaskCard = ({ id, title, duration, progress, category, completed = false, onClick }: TaskCardProps) => {
+export const TaskCard = ({ id, title, duration, category, completed = false, onClick, type }: TaskCardProps) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  console.log('TaskCard rendered:', { id, title, completed });
+  // Fetch child goals
+  const { data: childGoals } = useQuery({
+    queryKey: ['goals', 'children', id],
+    queryFn: async () => {
+      if (type === 'daily') return null;
+      
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('parent_id', id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: type !== 'daily',
+  });
+
+  // Calculate completion percentage
+  const completionPercentage = React.useMemo(() => {
+    if (!childGoals || childGoals.length === 0) return completed ? 100 : 0;
+    
+    const completedGoals = childGoals.filter(goal => goal.completed).length;
+    return Math.round((completedGoals / childGoals.length) * 100);
+  }, [childGoals, completed]);
+
+  console.log('TaskCard rendered:', { id, title, completed, childGoals, completionPercentage });
 
   const handleCompletionToggle = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering the card's onClick
+    e.stopPropagation();
 
     try {
       const { error } = await supabase
@@ -33,7 +60,6 @@ export const TaskCard = ({ id, title, duration, progress, category, completed = 
 
       if (error) throw error;
 
-      // Invalidate and refetch queries
       queryClient.invalidateQueries({ queryKey: ['goals'] });
 
       toast({
@@ -50,6 +76,34 @@ export const TaskCard = ({ id, title, duration, progress, category, completed = 
       });
     }
   };
+
+  const handleChildCompletionToggle = async (childId: string, isCompleted: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .update({ completed: !isCompleted })
+        .eq('id', childId);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+
+      toast({
+        title: isCompleted ? "Sous-objectif non complété" : "Sous-objectif complété",
+        description: isCompleted ? "Le sous-objectif a été marqué comme non complété" : "Le sous-objectif a été marqué comme complété",
+      });
+
+    } catch (error) {
+      console.error('Error toggling child completion:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour du sous-objectif",
+        variant: "destructive",
+      });
+    }
+  };
   
   return (
     <Card 
@@ -62,22 +116,49 @@ export const TaskCard = ({ id, title, duration, progress, category, completed = 
       }`}
       onClick={onClick}
     >
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="text-white font-semibold mb-2">{title}</h3>
-          <div className="text-white/80 text-sm mb-3">{duration} min</div>
+          <div className="text-white/80 text-sm">{duration} min</div>
         </div>
-        <button
-          onClick={handleCompletionToggle}
-          className={`rounded-full p-2 transition-colors ${
-            completed ? 'bg-white' : 'bg-white/20 hover:bg-white/30'
-          }`}
-        >
-          <Check className={`h-4 w-4 ${completed ? 'text-green-500' : 'text-white'}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-white font-medium">{completionPercentage}%</span>
+          <button
+            onClick={handleCompletionToggle}
+            className={`rounded-full p-2 transition-colors ${
+              completed ? 'bg-white' : 'bg-white/20 hover:bg-white/30'
+            }`}
+          >
+            <Check className={`h-4 w-4 ${completed ? 'text-green-500' : 'text-white'}`} />
+          </button>
+        </div>
       </div>
-      <Progress value={progress} className="h-2 bg-white/20" 
-        indicatorClassName="bg-white" />
+
+      {childGoals && childGoals.length > 0 && (
+        <div className="mt-4 space-y-2">
+          <div className="h-px bg-white/20 mb-3"></div>
+          {childGoals.map((child) => (
+            <div key={child.id} 
+              className="flex items-center justify-between py-1 px-2 rounded bg-white/10">
+              <span className="text-sm text-white">{child.title}</span>
+              <button
+                onClick={(e) => handleChildCompletionToggle(child.id, child.completed, e)}
+                className={`rounded-full p-1.5 transition-colors ${
+                  child.completed ? 'bg-white' : 'bg-white/20 hover:bg-white/30'
+                }`}
+              >
+                <Check className={`h-3 w-3 ${child.completed ? 'text-green-500' : 'text-white'}`} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Progress 
+        value={completionPercentage} 
+        className="h-2 bg-white/20 mt-4" 
+        indicatorClassName="bg-white" 
+      />
     </Card>
   );
 };
