@@ -10,30 +10,39 @@ import PeriodGoals from "./pages/PeriodGoals"
 import Calendar from "./pages/Calendar"
 import NotFound from "./pages/NotFound"
 
-const queryClient = new QueryClient()
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+})
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <div className="flex">
-          <DesktopNavigation />
-          <main className="flex-1 md:ml-64">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/daily" element={<DailyGoals />} />
-              <Route path="/periods" element={<PeriodGoals />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <MobileNavigation />
-        </div>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-)
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <div className="flex">
+            <DesktopNavigation />
+            <main className="flex-1 md:ml-64">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/daily" element={<DailyGoals />} />
+                <Route path="/periods" element={<PeriodGoals />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <MobileNavigation />
+          </div>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  )
+}
 
 export default App

@@ -6,12 +6,12 @@ import { CreateTaskDialog } from '@/components/CreateTaskDialog';
 
 const MOCK_TASKS = {
   professional: [
-    { id: 1, title: "Réunion d'équipe", duration: 60, progress: 0 },
-    { id: 2, title: "Revue de code", duration: 90, progress: 30 },
+    { id: "1", title: "Réunion d'équipe", duration: 60, progress: 0 },
+    { id: "2", title: "Revue de code", duration: 90, progress: 30 },
   ],
   personal: [
-    { id: 3, title: "Séance de sport", duration: 45, progress: 100 },
-    { id: 4, title: "Lecture", duration: 30, progress: 50 },
+    { id: "3", title: "Séance de sport", duration: 45, progress: 100 },
+    { id: "4", title: "Lecture", duration: 30, progress: 50 },
   ],
 };
 
@@ -35,6 +35,7 @@ const Index = () => {
             {MOCK_TASKS.professional.map((task) => (
               <TaskCard
                 key={task.id}
+                id={task.id}
                 title={task.title}
                 duration={task.duration}
                 progress={task.progress}
@@ -53,6 +54,7 @@ const Index = () => {
             {MOCK_TASKS.personal.map((task) => (
               <TaskCard
                 key={task.id}
+                id={task.id}
                 title={task.title}
                 duration={task.duration}
                 progress={task.progress}
