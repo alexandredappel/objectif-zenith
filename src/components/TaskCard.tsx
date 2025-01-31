@@ -66,6 +66,16 @@ export const TaskCard = ({ id, title, category, completed = false, onClick, type
 
       if (error) throw error;
 
+      // If unchecking a parent goal, also uncheck all children
+      if (completed && childGoals && childGoals.length > 0) {
+        const { error: childError } = await supabase
+          .from('goals')
+          .update({ completed: false })
+          .in('id', childGoals.map(child => child.id));
+
+        if (childError) throw childError;
+      }
+
       queryClient.invalidateQueries({ queryKey: ['goals'] });
 
       toast({
