@@ -16,6 +16,7 @@ export type Database = {
           created_at: string
           id: string
           minutes: number
+          parent_id: string | null
           start_date: string
           title: string
           type: string
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string
           id?: string
           minutes: number
+          parent_id?: string | null
           start_date: string
           title: string
           type: string
@@ -38,12 +40,21 @@ export type Database = {
           created_at?: string
           id?: string
           minutes?: number
+          parent_id?: string | null
           start_date?: string
           title?: string
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "goals_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

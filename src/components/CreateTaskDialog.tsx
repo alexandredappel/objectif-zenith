@@ -8,7 +8,7 @@ import { Calendar } from "./ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -21,10 +21,42 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
   const [category, setCategory] = useState<"professional" | "personal">("professional");
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("");
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   console.log("CreateTaskDialog rendered with type:", type);
+
+  // Fetch potential parent goals based on the selected type
+  const { data: parentGoals } = useQuery({
+    queryKey: ['goals', 'parents', type],
+    queryFn: async () => {
+      let parentType;
+      switch (type) {
+        case 'monthly':
+          parentType = 'quarterly';
+          break;
+        case 'weekly':
+          parentType = 'monthly';
+          break;
+        case 'daily':
+          parentType = 'weekly';
+          break;
+        default:
+          return [];
+      }
+
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('type', parentType)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: type !== 'quarterly', // Only fetch if we're not creating a quarterly goal
+  });
 
   const handleSubmit = async () => {
     if (!title || !duration || !selectedStartDate) {
@@ -43,6 +75,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
         category,
         minutes: parseInt(duration),
         start_date: selectedStartDate.toISOString(),
+        parent_id: selectedParentId,
       });
 
       if (error) throw error;
@@ -57,6 +90,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
       setDuration("");
       setSelectedStartDate(new Date());
       setCategory("professional");
+      setSelectedParentId(null);
       
       // Close dialog
       onOpenChange(false);
@@ -137,6 +171,24 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
               </SelectContent>
             </Select>
           </div>
+
+          {type !== 'quarterly' && parentGoals && parentGoals.length > 0 && (
+            <div className="space-y-2">
+              <Label>Objectif parent</Label>
+              <Select value={selectedParentId || ''} onValueChange={setSelectedParentId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un objectif parent" />
+                </SelectTrigger>
+                <SelectContent>
+                  {parentGoals.map((goal) => (
+                    <SelectItem key={goal.id} value={goal.id}>
+                      {goal.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Date de début</Label>

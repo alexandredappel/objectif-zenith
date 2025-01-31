@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Switch } from "./ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface EditTaskDialogProps {
   open: boolean;
@@ -23,6 +23,7 @@ interface EditTaskDialogProps {
     minutes: number;
     start_date: string;
     completed: boolean;
+    parent_id?: string | null;
   };
 }
 
@@ -35,11 +36,44 @@ export const EditTaskDialog = ({ open, onOpenChange, goal }: EditTaskDialogProps
   const [duration, setDuration] = useState(String(goal.minutes));
   const [type, setType] = useState(goal.type);
   const [completed, setCompleted] = useState(goal.completed);
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(goal.parent_id || null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   console.log('EditTaskDialog rendered:', { goal, completed });
+
+  // Fetch potential parent goals
+  const { data: parentGoals } = useQuery({
+    queryKey: ['goals', 'parents', type],
+    queryFn: async () => {
+      let parentType;
+      switch (type) {
+        case 'monthly':
+          parentType = 'quarterly';
+          break;
+        case 'weekly':
+          parentType = 'monthly';
+          break;
+        case 'daily':
+          parentType = 'weekly';
+          break;
+        default:
+          return [];
+      }
+
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('type', parentType)
+        .neq('id', goal.id) // Exclude current goal
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: type !== 'quarterly', // Only fetch if we're not editing a quarterly goal
+  });
 
   const handleSubmit = async () => {
     if (!title || !duration || !selectedStartDate) {
@@ -61,6 +95,7 @@ export const EditTaskDialog = ({ open, onOpenChange, goal }: EditTaskDialogProps
           minutes: parseInt(duration),
           start_date: selectedStartDate.toISOString(),
           completed,
+          parent_id: selectedParentId,
         })
         .eq('id', goal.id);
 
@@ -176,6 +211,24 @@ export const EditTaskDialog = ({ open, onOpenChange, goal }: EditTaskDialogProps
                 </SelectContent>
               </Select>
             </div>
+
+            {type !== 'quarterly' && parentGoals && parentGoals.length > 0 && (
+              <div className="space-y-2">
+                <Label>Objectif parent</Label>
+                <Select value={selectedParentId || ''} onValueChange={setSelectedParentId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un objectif parent" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {parentGoals.map((goal) => (
+                      <SelectItem key={goal.id} value={goal.id}>
+                        {goal.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Date de début</Label>
