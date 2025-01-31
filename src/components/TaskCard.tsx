@@ -2,9 +2,10 @@ import React from 'react';
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { Check } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { useToast } from "./ui/use-toast";
+import { useGoalManagement } from "@/hooks/useGoalManagement";
+import { ChildGoalsList } from "./ChildGoalsList";
 
 interface TaskCardProps {
   id: string;
@@ -15,9 +16,15 @@ interface TaskCardProps {
   type: 'quarterly' | 'monthly' | 'weekly' | 'daily';
 }
 
-export const TaskCard = ({ id, title, category, completed = false, onClick, type }: TaskCardProps) => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+export const TaskCard = ({ 
+  id, 
+  title, 
+  category, 
+  completed = false, 
+  onClick, 
+  type 
+}: TaskCardProps) => {
+  const { toggleGoalCompletion, toggleChildGoalCompletion } = useGoalManagement();
 
   // Fetch child goals
   const { data: childGoals } = useQuery({
@@ -40,7 +47,6 @@ export const TaskCard = ({ id, title, category, completed = false, onClick, type
   // Calculate completion percentage
   const completionPercentage = React.useMemo(() => {
     if (!childGoals || childGoals.length === 0) return completed ? 100 : 0;
-    
     const completedGoals = childGoals.filter(goal => goal.completed).length;
     return Math.round((completedGoals / childGoals.length) * 100);
   }, [childGoals, completed]);
@@ -56,85 +62,12 @@ export const TaskCard = ({ id, title, category, completed = false, onClick, type
 
   const handleCompletionToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Toggling completion for parent goal:', { id, currentStatus: completed });
-
-    try {
-      // Update parent goal
-      const { error: parentError } = await supabase
-        .from('goals')
-        .update({ completed: !completed })
-        .eq('id', id);
-
-      if (parentError) throw parentError;
-
-      // If unchecking a parent goal, also uncheck all children
-      if (completed && childGoals && childGoals.length > 0) {
-        console.log('Unchecking all child goals for parent:', id);
-        const { error: childError } = await supabase
-          .from('goals')
-          .update({ completed: false })
-          .in('id', childGoals.map(child => child.id));
-
-        if (childError) throw childError;
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ['goals'] });
-
-      toast({
-        title: completed ? "Objectif non complété" : "Objectif complété",
-        description: completed ? "L'objectif a été marqué comme non complété" : "L'objectif a été marqué comme complété",
-      });
-
-    } catch (error) {
-      console.error('Error toggling completion:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour de l'objectif",
-        variant: "destructive",
-      });
-    }
+    await toggleGoalCompletion(id, completed, childGoals);
   };
 
   const handleChildCompletionToggle = async (childId: string, isCompleted: boolean, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Toggling completion for child goal:', { childId, currentStatus: isCompleted });
-
-    try {
-      // First, update the child goal
-      const { error: childError } = await supabase
-        .from('goals')
-        .update({ completed: !isCompleted })
-        .eq('id', childId);
-
-      if (childError) throw childError;
-
-      // If we're unchecking a child, ensure the parent is also unchecked
-      if (isCompleted) {
-        console.log('Child goal unchecked, updating parent goal:', id);
-        const { error: parentError } = await supabase
-          .from('goals')
-          .update({ completed: false })
-          .eq('id', id);
-
-        if (parentError) throw parentError;
-      }
-
-      // Invalidate queries after both updates are complete
-      await queryClient.invalidateQueries({ queryKey: ['goals'] });
-
-      toast({
-        title: isCompleted ? "Sous-objectif non complété" : "Sous-objectif complété",
-        description: isCompleted ? "Le sous-objectif a été marqué comme non complété" : "Le sous-objectif a été marqué comme complété",
-      });
-
-    } catch (error) {
-      console.error('Error toggling child completion:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour du sous-objectif",
-        variant: "destructive",
-      });
-    }
+    await toggleChildGoalCompletion(childId, id, isCompleted);
   };
   
   return (
@@ -165,25 +98,10 @@ export const TaskCard = ({ id, title, category, completed = false, onClick, type
         </div>
       </div>
 
-      {childGoals && childGoals.length > 0 && (
-        <div className="mt-4 space-y-2">
-          <div className="h-px bg-white/20 mb-3"></div>
-          {childGoals.map((child) => (
-            <div key={child.id} 
-              className="flex items-center justify-between py-1 px-2 rounded bg-white/10">
-              <span className="text-sm text-white">{child.title}</span>
-              <button
-                onClick={(e) => handleChildCompletionToggle(child.id, child.completed, e)}
-                className={`rounded-full p-1.5 transition-colors ${
-                  child.completed ? 'bg-white' : 'bg-white/20 hover:bg-white/30'
-                }`}
-              >
-                <Check className={`h-3 w-3 ${child.completed ? 'text-green-500' : 'text-white'}`} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      <ChildGoalsList 
+        childGoals={childGoals || []} 
+        onToggleChild={handleChildCompletionToggle}
+      />
 
       <Progress 
         value={completionPercentage} 
