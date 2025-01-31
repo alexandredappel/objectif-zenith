@@ -22,8 +22,18 @@ export const useGoalManagement = () => {
 
       if (parentError) throw parentError;
 
+      // If completing a parent goal, also complete all children
+      if (!currentStatus && childGoals && childGoals.length > 0) {
+        console.log('Completing all child goals for parent:', goalId);
+        const { error: childError } = await supabase
+          .from('goals')
+          .update({ completed: true })
+          .in('id', childGoals.map(child => child.id));
+
+        if (childError) throw childError;
+      }
       // If unchecking a parent goal, also uncheck all children
-      if (currentStatus && childGoals && childGoals.length > 0) {
+      else if (currentStatus && childGoals && childGoals.length > 0) {
         console.log('Unchecking all child goals for parent:', goalId);
         const { error: childError } = await supabase
           .from('goals')
@@ -37,7 +47,9 @@ export const useGoalManagement = () => {
 
       toast({
         title: currentStatus ? "Objectif non complété" : "Objectif complété",
-        description: currentStatus ? "L'objectif a été marqué comme non complété" : "L'objectif a été marqué comme complété",
+        description: currentStatus 
+          ? "L'objectif et ses sous-objectifs ont été marqués comme non complétés" 
+          : "L'objectif et ses sous-objectifs ont été marqués comme complétés",
       });
 
       return true;
@@ -83,7 +95,9 @@ export const useGoalManagement = () => {
 
       toast({
         title: isCompleted ? "Sous-objectif non complété" : "Sous-objectif complété",
-        description: isCompleted ? "Le sous-objectif a été marqué comme non complété" : "Le sous-objectif a été marqué comme complété",
+        description: isCompleted 
+          ? "Le sous-objectif a été marqué comme non complété" 
+          : "Le sous-objectif a été marqué comme complété",
       });
 
       return true;
