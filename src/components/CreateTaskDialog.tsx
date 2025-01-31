@@ -5,8 +5,10 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Calendar } from "./ui/calendar";
-import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "./ui/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -16,10 +18,61 @@ interface CreateTaskDialogProps {
 
 export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateTaskDialogProps) => {
   const [selectedStartDate, setSelectedStartDate] = useState<Date | undefined>(new Date());
-  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>(new Date());
   const [category, setCategory] = useState<"professional" | "personal">("professional");
+  const [title, setTitle] = useState("");
+  const [duration, setDuration] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   console.log("CreateTaskDialog rendered with type:", type);
+
+  const handleSubmit = async () => {
+    if (!title || !duration || !selectedStartDate) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs obligatoires",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('goals').insert({
+        title,
+        type,
+        category,
+        minutes: parseInt(duration),
+        start_date: selectedStartDate.toISOString(),
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: "L'objectif a été créé avec succès",
+      });
+
+      // Reset form
+      setTitle("");
+      setDuration("");
+      setSelectedStartDate(new Date());
+      setCategory("professional");
+      
+      // Close dialog
+      onOpenChange(false);
+      
+      // Invalidate queries to refresh the lists
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+
+    } catch (error) {
+      console.error('Error creating goal:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la création de l'objectif",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,12 +103,12 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
 
           <div className="space-y-2">
             <Label htmlFor="title">Titre</Label>
-            <Input id="title" placeholder="Nom de l'objectif" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea id="description" placeholder="Description de l'objectif" />
+            <Input 
+              id="title" 
+              placeholder="Nom de l'objectif" 
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
@@ -65,6 +118,8 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
               type="number"
               min="1"
               placeholder="60"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
             />
           </div>
 
@@ -92,23 +147,13 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
               className="rounded-md border"
             />
           </div>
-
-          <div className="space-y-2">
-            <Label>Date de fin</Label>
-            <Calendar
-              mode="single"
-              selected={selectedEndDate}
-              onSelect={setSelectedEndDate}
-              className="rounded-md border"
-            />
-          </div>
         </div>
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button onClick={() => onOpenChange(false)}>
+          <Button onClick={handleSubmit}>
             Créer
           </Button>
         </div>
