@@ -66,13 +66,13 @@ export const EditTaskDialog = ({ open, onOpenChange, goal }: EditTaskDialogProps
         .from('goals')
         .select('*')
         .eq('type', parentType)
-        .neq('id', goal.id)
+        .neq('id', goal.id) // Exclude current goal
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data || [];
     },
-    enabled: type !== 'quarterly',
+    enabled: type !== 'quarterly', // Only fetch if we're not editing a quarterly goal
   });
 
   const handleSubmit = async () => {
@@ -107,10 +107,7 @@ export const EditTaskDialog = ({ open, onOpenChange, goal }: EditTaskDialogProps
       });
       
       onOpenChange(false);
-      // Invalider toutes les queries liées aux objectifs
-      await queryClient.invalidateQueries({ 
-        predicate: (query) => query.queryKey[0] === 'goals'
-      });
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
 
     } catch (error) {
       console.error('Error updating goal:', error);
@@ -138,10 +135,7 @@ export const EditTaskDialog = ({ open, onOpenChange, goal }: EditTaskDialogProps
       
       setShowDeleteDialog(false);
       onOpenChange(false);
-      // Invalider toutes les queries liées aux objectifs
-      await queryClient.invalidateQueries({ 
-        predicate: (query) => query.queryKey[0] === 'goals'
-      });
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
 
     } catch (error) {
       console.error('Error deleting goal:', error);
