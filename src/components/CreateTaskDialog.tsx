@@ -11,7 +11,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { CalendarIcon, PlusCircle, MinusCircle } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -21,19 +21,12 @@ interface CreateTaskDialogProps {
   type?: "quarterly" | "monthly" | "weekly" | "daily";
 }
 
-interface SubGoal {
-  id: string;
-  title: string;
-}
-
 export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateTaskDialogProps) => {
   const [selectedStartDate, setSelectedStartDate] = useState<Date | undefined>(new Date());
   const [category, setCategory] = useState<"professional" | "personal">("professional");
   const [title, setTitle] = useState("");
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<"quarterly" | "monthly" | "weekly" | "daily">(type);
-  const [subGoals, setSubGoals] = useState<SubGoal[]>([]);
-  const [newSubGoal, setNewSubGoal] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -73,20 +66,6 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
     enabled: selectedType !== 'quarterly',
   });
 
-  const handleAddSubGoal = () => {
-    if (!newSubGoal.trim()) return;
-    
-    setSubGoals([...subGoals, {
-      id: crypto.randomUUID(),
-      title: newSubGoal.trim()
-    }]);
-    setNewSubGoal("");
-  };
-
-  const handleRemoveSubGoal = (id: string) => {
-    setSubGoals(subGoals.filter(goal => goal.id !== id));
-  };
-
   const handleSubmit = async () => {
     if (!title || !selectedStartDate) {
       toast({
@@ -98,53 +77,30 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
     }
 
     try {
-      // Create main goal
-      const { data: mainGoal, error: mainError } = await supabase
-        .from('goals')
-        .insert({
-          title,
-          type: selectedType,
-          category,
-          start_date: selectedStartDate.toISOString(),
-          parent_id: selectedParentId,
-        })
-        .select()
-        .single();
+      const { error } = await supabase.from('goals').insert({
+        title,
+        type: selectedType,
+        category,
+        start_date: selectedStartDate.toISOString(),
+        parent_id: selectedParentId,
+      });
 
-      if (mainError) throw mainError;
-
-      // Create sub-goals if any
-      if (subGoals.length > 0) {
-        const { error: subGoalsError } = await supabase
-          .from('goals')
-          .insert(
-            subGoals.map(subGoal => ({
-              title: subGoal.title,
-              type: selectedType,
-              category,
-              start_date: selectedStartDate.toISOString(),
-              parent_id: mainGoal.id,
-            }))
-          );
-
-        if (subGoalsError) throw subGoalsError;
-      }
+      if (error) throw error;
 
       toast({
         title: "Succès",
-        description: "L'objectif et ses sous-objectifs ont été créés avec succès",
+        description: "L'objectif a été créé avec succès",
       });
 
       setTitle("");
       setSelectedStartDate(new Date());
       setCategory("professional");
       setSelectedParentId(null);
-      setSubGoals([]);
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ['goals'] });
 
     } catch (error) {
-      console.error('Error creating goals:', error);
+      console.error('Error creating goal:', error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la création de l'objectif",
@@ -281,50 +237,6 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
                 </Popover>
               </div>
             )}
-
-            <div className="space-y-2 pt-4">
-              <Label>Sous-objectifs</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Ajouter un sous-objectif"
-                  value={newSubGoal}
-                  onChange={(e) => setNewSubGoal(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddSubGoal();
-                    }
-                  }}
-                />
-                <Button
-                  onClick={handleAddSubGoal}
-                  variant="outline"
-                  size="icon"
-                >
-                  <PlusCircle className="h-4 w-4" />
-                </Button>
-              </div>
-              {subGoals.length > 0 && (
-                <div className="space-y-2 mt-2">
-                  {subGoals.map((subGoal) => (
-                    <div
-                      key={subGoal.id}
-                      className="flex items-center justify-between p-2 rounded bg-gray-100 dark:bg-gray-800"
-                    >
-                      <span className="text-sm">{subGoal.title}</span>
-                      <Button
-                        onClick={() => handleRemoveSubGoal(subGoal.id)}
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                      >
-                        <MinusCircle className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </ScrollArea>
 
