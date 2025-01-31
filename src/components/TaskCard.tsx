@@ -47,6 +47,14 @@ export const TaskCard = ({ id, title, duration, category, completed = false, onC
     return Math.round((completedGoals / childGoals.length) * 100);
   }, [childGoals, completed]);
 
+  // Auto-complete parent goal when all children are completed
+  React.useEffect(() => {
+    const shouldAutoComplete = completionPercentage === 100 && !completed;
+    if (shouldAutoComplete) {
+      handleCompletionToggle(new Event('click') as any);
+    }
+  }, [completionPercentage, completed]);
+
   console.log('TaskCard rendered:', { id, title, completed, childGoals, completionPercentage });
 
   const handleCompletionToggle = async (e: React.MouseEvent) => {
@@ -107,7 +115,7 @@ export const TaskCard = ({ id, title, duration, category, completed = false, onC
   
   return (
     <Card 
-      className={`p-4 hover:shadow-lg transition-shadow cursor-pointer relative ${
+      className={`w-full p-4 hover:shadow-lg transition-shadow cursor-pointer relative ${
         category === 'professional' ? 
           completed ? 'bg-gradient-to-r from-professional/50 to-professional-light/50' :
           'bg-gradient-to-r from-professional to-professional-light' : 

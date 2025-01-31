@@ -27,6 +27,9 @@ const PeriodGoals = () => {
     },
   });
 
+  const professionalGoals = goals?.filter(goal => goal.category === 'professional') || [];
+  const personalGoals = goals?.filter(goal => goal.category === 'personal') || [];
+
   console.log('PeriodGoals rendered:', { currentPeriod, goals });
 
   const handleGoalClick = (goal: any) => {
@@ -44,20 +47,48 @@ const PeriodGoals = () => {
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {goals.map((goal) => (
-          <TaskCard
-            key={goal.id}
-            id={goal.id}
-            title={goal.title}
-            duration={goal.minutes}
-            progress={0}
-            category={goal.category as "professional" | "personal"}
-            completed={goal.completed}
-            onClick={() => handleGoalClick(goal)}
-            type={goal.type as "quarterly" | "monthly" | "weekly" | "daily"}
-          />
-        ))}
+      <div className="space-y-8">
+        {professionalGoals.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-gray-800">Objectifs professionnels</h2>
+            <div className="space-y-4">
+              {professionalGoals.map((goal) => (
+                <TaskCard
+                  key={goal.id}
+                  id={goal.id}
+                  title={goal.title}
+                  duration={goal.minutes}
+                  progress={0}
+                  category={goal.category as "professional" | "personal"}
+                  completed={goal.completed}
+                  onClick={() => handleGoalClick(goal)}
+                  type={goal.type as "quarterly" | "monthly" | "weekly" | "daily"}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {personalGoals.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-gray-800">Objectifs personnels</h2>
+            <div className="space-y-4">
+              {personalGoals.map((goal) => (
+                <TaskCard
+                  key={goal.id}
+                  id={goal.id}
+                  title={goal.title}
+                  duration={goal.minutes}
+                  progress={0}
+                  category={goal.category as "professional" | "personal"}
+                  completed={goal.completed}
+                  onClick={() => handleGoalClick(goal)}
+                  type={goal.type as "quarterly" | "monthly" | "weekly" | "daily"}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -80,13 +111,13 @@ const PeriodGoals = () => {
             <TabsTrigger value="monthly">Mensuels</TabsTrigger>
             <TabsTrigger value="weekly">Hebdomadaires</TabsTrigger>
           </TabsList>
-          <TabsContent value="quarterly" className="bg-white rounded-lg shadow p-6">
+          <TabsContent value="quarterly">
             {renderGoals()}
           </TabsContent>
-          <TabsContent value="monthly" className="bg-white rounded-lg shadow p-6">
+          <TabsContent value="monthly">
             {renderGoals()}
           </TabsContent>
-          <TabsContent value="weekly" className="bg-white rounded-lg shadow p-6">
+          <TabsContent value="weekly">
             {renderGoals()}
           </TabsContent>
         </Tabs>

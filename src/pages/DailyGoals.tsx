@@ -25,6 +25,9 @@ const DailyGoals = () => {
     },
   });
 
+  const professionalGoals = goals?.filter(goal => goal.category === 'professional') || [];
+  const personalGoals = goals?.filter(goal => goal.category === 'personal') || [];
+
   console.log('DailyGoals rendered:', { goals });
 
   const handleGoalClick = (goal: any) => {
@@ -39,30 +42,58 @@ const DailyGoals = () => {
         <p className="text-gray-600">Gérez vos tâches quotidiennes</p>
       </header>
 
-      <main className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-lg shadow p-6">
-          {isLoading ? (
-            <p>Chargement...</p>
-          ) : goals && goals.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {goals.map((goal) => (
-                <TaskCard
-                  key={goal.id}
-                  id={goal.id}
-                  title={goal.title}
-                  duration={goal.minutes}
-                  progress={0}
-                  category={goal.category as "professional" | "personal"}
-                  completed={goal.completed}
-                  onClick={() => handleGoalClick(goal)}
-                  type={goal.type as "quarterly" | "monthly" | "weekly" | "daily"}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500">Aucun objectif pour aujourd'hui</p>
-          )}
-        </div>
+      <main className="max-w-3xl mx-auto space-y-8">
+        {isLoading ? (
+          <p>Chargement...</p>
+        ) : (
+          <>
+            {professionalGoals.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-gray-800">Objectifs professionnels</h2>
+                <div className="space-y-4">
+                  {professionalGoals.map((goal) => (
+                    <TaskCard
+                      key={goal.id}
+                      id={goal.id}
+                      title={goal.title}
+                      duration={goal.minutes}
+                      progress={0}
+                      category={goal.category as "professional" | "personal"}
+                      completed={goal.completed}
+                      onClick={() => handleGoalClick(goal)}
+                      type={goal.type as "quarterly" | "monthly" | "weekly" | "daily"}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {personalGoals.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-gray-800">Objectifs personnels</h2>
+                <div className="space-y-4">
+                  {personalGoals.map((goal) => (
+                    <TaskCard
+                      key={goal.id}
+                      id={goal.id}
+                      title={goal.title}
+                      duration={goal.minutes}
+                      progress={0}
+                      category={goal.category as "professional" | "personal"}
+                      completed={goal.completed}
+                      onClick={() => handleGoalClick(goal)}
+                      type={goal.type as "quarterly" | "monthly" | "weekly" | "daily"}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {goals?.length === 0 && (
+              <p className="text-gray-500">Aucun objectif pour aujourd'hui</p>
+            )}
+          </>
+        )}
       </main>
 
       <FloatingActionButton onClick={() => setIsCreateDialogOpen(true)} />
