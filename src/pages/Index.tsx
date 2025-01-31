@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TaskCard } from '@/components/TaskCard';
 import { CategoryHeader } from '@/components/CategoryHeader';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { CreateTaskDialog } from '@/components/CreateTaskDialog';
 
 const MOCK_TASKS = {
   professional: [
@@ -14,6 +16,8 @@ const MOCK_TASKS = {
 };
 
 const Index = () => {
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <header className="mb-8">
@@ -58,6 +62,12 @@ const Index = () => {
           </div>
         </section>
       </main>
+
+      <FloatingActionButton onClick={() => setCreateDialogOpen(true)} />
+      <CreateTaskDialog 
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+      />
     </div>
   );
 };
