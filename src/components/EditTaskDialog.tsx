@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -66,7 +66,7 @@ export const EditTaskDialog = ({ open, onOpenChange, goal }: EditTaskDialogProps
   });
 
   // Initialize subGoals state with existing sub-goals
-  useState(() => {
+  useEffect(() => {
     if (existingSubGoals) {
       setSubGoals(existingSubGoals.map(g => ({ title: g.title, id: g.id })));
     }
