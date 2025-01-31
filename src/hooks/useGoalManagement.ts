@@ -9,6 +9,18 @@ export const useGoalManagement = () => {
   const checkAndUpdateParentGoal = async (parentId: string) => {
     console.log('Checking parent goal:', parentId);
     
+    // Vérifier d'abord si le parent existe toujours
+    const { data: parentExists, error: existsError } = await supabase
+      .from('goals')
+      .select('id')
+      .eq('id', parentId)
+      .single();
+
+    if (existsError || !parentExists) {
+      console.log('Parent goal no longer exists:', parentId);
+      return;
+    }
+    
     // Fetch all child goals for this parent
     const { data: childGoals, error: childError } = await supabase
       .from('goals')
