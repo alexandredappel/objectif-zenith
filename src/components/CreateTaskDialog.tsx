@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { ScrollArea } from "./ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -20,10 +22,10 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
   const [selectedStartDate, setSelectedStartDate] = useState<Date | undefined>(new Date());
   const [category, setCategory] = useState<"professional" | "personal">("professional");
   const [title, setTitle] = useState("");
-  const [duration, setDuration] = useState("");
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   console.log("CreateTaskDialog rendered with type:", type);
 
@@ -59,7 +61,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
   });
 
   const handleSubmit = async () => {
-    if (!title || !duration || !selectedStartDate) {
+    if (!title || !selectedStartDate) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs obligatoires",
@@ -73,7 +75,6 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
         title,
         type,
         category,
-        minutes: parseInt(duration),
         start_date: selectedStartDate.toISOString(),
         parent_id: selectedParentId,
       });
@@ -87,7 +88,6 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
 
       // Reset form
       setTitle("");
-      setDuration("");
       setSelectedStartDate(new Date());
       setCategory("professional");
       setSelectedParentId(null);
@@ -110,105 +110,95 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className={`${isMobile ? 'w-[95vw] h-[90vh]' : 'w-[60vw] h-[80vh]'} p-0`}>
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle className="text-xl font-semibold">
             Nouvel objectif
           </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label>Type d'objectif</Label>
-            <RadioGroup
-              defaultValue={category}
-              onValueChange={(value) => setCategory(value as "professional" | "personal")}
-              className="flex gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="professional" id="professional" />
-                <Label htmlFor="professional">Professionnel</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="personal" id="personal" />
-                <Label htmlFor="personal">Personnel</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="title">Titre</Label>
-            <Input 
-              id="title" 
-              placeholder="Nom de l'objectif" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="duration">Durée (minutes)</Label>
-            <Input
-              id="duration"
-              type="number"
-              min="1"
-              placeholder="60"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Type de période</Label>
-            <Select defaultValue={type}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="quarterly">Trimestriel</SelectItem>
-                <SelectItem value="monthly">Mensuel</SelectItem>
-                <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                <SelectItem value="daily">Journalier</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {type !== 'quarterly' && parentGoals && parentGoals.length > 0 && (
+        <ScrollArea className="h-full px-6">
+          <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label>Objectif parent</Label>
-              <Select value={selectedParentId || ''} onValueChange={setSelectedParentId}>
+              <Label>Type d'objectif</Label>
+              <RadioGroup
+                defaultValue={category}
+                onValueChange={(value) => setCategory(value as "professional" | "personal")}
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="professional" id="professional" />
+                  <Label htmlFor="professional">Professionnel</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="personal" id="personal" />
+                  <Label htmlFor="personal">Personnel</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="title">Titre</Label>
+              <Input 
+                id="title" 
+                placeholder="Nom de l'objectif" 
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Type de période</Label>
+              <Select defaultValue={type}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un objectif parent" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {parentGoals.map((goal) => (
-                    <SelectItem key={goal.id} value={goal.id}>
-                      {goal.title}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="quarterly">Trimestriel</SelectItem>
+                  <SelectItem value="monthly">Mensuel</SelectItem>
+                  <SelectItem value="weekly">Hebdomadaire</SelectItem>
+                  <SelectItem value="daily">Journalier</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label>Date de début</Label>
-            <Calendar
-              mode="single"
-              selected={selectedStartDate}
-              onSelect={setSelectedStartDate}
-              className="rounded-md border"
-            />
+            {type !== 'quarterly' && parentGoals && parentGoals.length > 0 && (
+              <div className="space-y-2">
+                <Label>Objectif parent</Label>
+                <div className="flex flex-wrap gap-2">
+                  {parentGoals.map((goal) => (
+                    <Button
+                      key={goal.id}
+                      variant={selectedParentId === goal.id ? "default" : "outline"}
+                      onClick={() => setSelectedParentId(goal.id)}
+                      className="flex-grow sm:flex-grow-0"
+                    >
+                      {goal.title}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Date de début</Label>
+              <Calendar
+                mode="single"
+                selected={selectedStartDate}
+                onSelect={setSelectedStartDate}
+                className="rounded-md border"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annuler
-          </Button>
-          <Button onClick={handleSubmit}>
-            Créer
-          </Button>
-        </div>
+          <div className="flex justify-end gap-2 py-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleSubmit}>
+              Créer
+            </Button>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
