@@ -9,7 +9,7 @@ const DailyGoals = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const { data: goals, isLoading } = useQuery({
-    queryKey: ['goals'],
+    queryKey: ['goals', 'daily'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('goals')
@@ -41,7 +41,7 @@ const DailyGoals = () => {
                   title={goal.title}
                   duration={goal.minutes}
                   progress={0}
-                  category={goal.category}
+                  category={goal.category as "professional" | "personal"}
                 />
               ))}
             </div>

@@ -11,11 +11,12 @@ const PeriodGoals = () => {
   const [currentPeriod, setCurrentPeriod] = useState<"quarterly" | "monthly" | "weekly">("quarterly");
 
   const { data: goals, isLoading } = useQuery({
-    queryKey: ['goals'],
+    queryKey: ['goals', currentPeriod],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('goals')
         .select('*')
+        .eq('type', currentPeriod)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -23,30 +24,24 @@ const PeriodGoals = () => {
     },
   });
 
-  const filterGoalsByType = (type: string) => {
-    return goals?.filter(goal => goal.type === type) || [];
-  };
-
-  const renderGoals = (type: string) => {
-    const filteredGoals = filterGoalsByType(type);
-    
+  const renderGoals = () => {
     if (isLoading) {
       return <p>Chargement...</p>;
     }
 
-    if (filteredGoals.length === 0) {
+    if (!goals || goals.length === 0) {
       return <p className="text-gray-500">Aucun objectif pour cette période</p>;
     }
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredGoals.map((goal) => (
+        {goals.map((goal) => (
           <TaskCard
             key={goal.id}
             title={goal.title}
             duration={goal.minutes}
             progress={0}
-            category={goal.category}
+            category={goal.category as "professional" | "personal"}
           />
         ))}
       </div>
@@ -72,13 +67,13 @@ const PeriodGoals = () => {
             <TabsTrigger value="weekly">Hebdomadaires</TabsTrigger>
           </TabsList>
           <TabsContent value="quarterly" className="bg-white rounded-lg shadow p-6">
-            {renderGoals("quarterly")}
+            {renderGoals()}
           </TabsContent>
           <TabsContent value="monthly" className="bg-white rounded-lg shadow p-6">
-            {renderGoals("monthly")}
+            {renderGoals()}
           </TabsContent>
           <TabsContent value="weekly" className="bg-white rounded-lg shadow p-6">
-            {renderGoals("weekly")}
+            {renderGoals()}
           </TabsContent>
         </Tabs>
       </main>
