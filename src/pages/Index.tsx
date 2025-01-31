@@ -6,12 +6,36 @@ import { CreateTaskDialog } from '@/components/CreateTaskDialog';
 
 const MOCK_TASKS = {
   professional: [
-    { id: "1", title: "Réunion d'équipe", duration: 60, progress: 0 },
-    { id: "2", title: "Revue de code", duration: 90, progress: 30 },
+    { 
+      id: "123e4567-e89b-12d3-a456-426614174000", 
+      title: "Réunion d'équipe", 
+      duration: 60, 
+      progress: 0,
+      type: "daily" as const
+    },
+    { 
+      id: "123e4567-e89b-12d3-a456-426614174001", 
+      title: "Revue de code", 
+      duration: 90, 
+      progress: 30,
+      type: "daily" as const
+    },
   ],
   personal: [
-    { id: "3", title: "Séance de sport", duration: 45, progress: 100 },
-    { id: "4", title: "Lecture", duration: 30, progress: 50 },
+    { 
+      id: "123e4567-e89b-12d3-a456-426614174002", 
+      title: "Séance de sport", 
+      duration: 45, 
+      progress: 100,
+      type: "daily" as const
+    },
+    { 
+      id: "123e4567-e89b-12d3-a456-426614174003", 
+      title: "Lecture", 
+      duration: 30, 
+      progress: 50,
+      type: "daily" as const
+    },
   ],
 };
 
@@ -40,6 +64,7 @@ const Index = () => {
                 duration={task.duration}
                 progress={task.progress}
                 category="professional"
+                type={task.type}
               />
             ))}
           </div>
@@ -59,6 +84,7 @@ const Index = () => {
                 duration={task.duration}
                 progress={task.progress}
                 category="personal"
+                type={task.type}
               />
             ))}
           </div>

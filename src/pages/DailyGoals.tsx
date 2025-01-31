@@ -55,6 +55,7 @@ const DailyGoals = () => {
                   category={goal.category as "professional" | "personal"}
                   completed={goal.completed}
                   onClick={() => handleGoalClick(goal)}
+                  type={goal.type as "quarterly" | "monthly" | "weekly" | "daily"}
                 />
               ))}
             </div>
