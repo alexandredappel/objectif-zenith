@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
+import { EditTaskDialog } from "@/components/EditTaskDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskCard } from "@/components/TaskCard";
 
 const DailyGoals = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<any>(null);
 
   const { data: goals, isLoading } = useQuery({
     queryKey: ['goals', 'daily'],
@@ -21,6 +24,13 @@ const DailyGoals = () => {
       return data;
     },
   });
+
+  console.log('DailyGoals rendered:', { goals });
+
+  const handleGoalClick = (goal: any) => {
+    setSelectedGoal(goal);
+    setIsEditDialogOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -38,10 +48,13 @@ const DailyGoals = () => {
               {goals.map((goal) => (
                 <TaskCard
                   key={goal.id}
+                  id={goal.id}
                   title={goal.title}
                   duration={goal.minutes}
                   progress={0}
                   category={goal.category as "professional" | "personal"}
+                  completed={goal.completed}
+                  onClick={() => handleGoalClick(goal)}
                 />
               ))}
             </div>
@@ -57,6 +70,13 @@ const DailyGoals = () => {
         onOpenChange={setIsCreateDialogOpen}
         type="daily"
       />
+      {selectedGoal && (
+        <EditTaskDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          goal={selectedGoal}
+        />
+      )}
     </div>
   );
 };

@@ -12,6 +12,7 @@ export type Database = {
       goals: {
         Row: {
           category: string
+          completed: boolean | null
           created_at: string
           id: string
           minutes: number
@@ -22,6 +23,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          completed?: boolean | null
           created_at?: string
           id?: string
           minutes: number
@@ -32,6 +34,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          completed?: boolean | null
           created_at?: string
           id?: string
           minutes?: number
