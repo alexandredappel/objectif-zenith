@@ -9,6 +9,11 @@ import { useToast } from "./ui/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "./ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { cn } from "@/lib/utils";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -26,14 +31,10 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
 
-  console.log("CreateTaskDialog rendered with type:", type);
-
-  // Update selectedType when type prop changes
   useEffect(() => {
     setSelectedType(type);
   }, [type]);
 
-  // Determine parent type based on selected type
   const getParentType = (currentType: string) => {
     switch (currentType) {
       case 'monthly':
@@ -47,7 +48,6 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
     }
   };
 
-  // Fetch potential parent goals based on the selected type
   const { data: parentGoals } = useQuery({
     queryKey: ['goals', 'parents', selectedType],
     queryFn: async () => {
@@ -92,16 +92,11 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
         description: "L'objectif a été créé avec succès",
       });
 
-      // Reset form
       setTitle("");
       setSelectedStartDate(new Date());
       setCategory("professional");
       setSelectedParentId(null);
-      
-      // Close dialog
       onOpenChange(false);
-      
-      // Invalidate queries to refresh the lists
       queryClient.invalidateQueries({ queryKey: ['goals'] });
 
     } catch (error) {
@@ -123,38 +118,15 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${isMobile ? 'w-[95vw] h-[90vh]' : 'w-[60vw] h-[80vh]'} p-0`}>
+      <DialogContent className={`${isMobile ? 'w-[95vw] h-[90vh]' : 'w-[60vw] h-[80vh]'} p-0 flex flex-col`}>
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="text-xl font-semibold">
             Nouvel objectif
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="h-full px-6">
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label>Type d'objectif</Label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={category === "professional" ? "default" : "outline"}
-                  onClick={() => setCategory("professional")}
-                  className={`flex-grow sm:flex-grow-0 ${
-                    category === "professional" ? "bg-professional" : ""
-                  }`}
-                >
-                  Professionnel
-                </Button>
-                <Button
-                  variant={category === "personal" ? "default" : "outline"}
-                  onClick={() => setCategory("personal")}
-                  className={`flex-grow sm:flex-grow-0 ${
-                    category === "personal" ? "bg-personal" : ""
-                  }`}
-                >
-                  Personnel
-                </Button>
-              </div>
-            </div>
 
+        <ScrollArea className="flex-1 px-6">
+          <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Titre</Label>
               <Input 
@@ -166,6 +138,30 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
             </div>
 
             <div className="space-y-2">
+              <Label>Type d'objectif</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={category === "professional" ? "default" : "outline"}
+                  onClick={() => setCategory("professional")}
+                  className={`flex-grow sm:flex-grow-0 ${
+                    category === "professional" ? "bg-gradient-to-r from-professional to-professional-light" : ""
+                  }`}
+                >
+                  Professionnel
+                </Button>
+                <Button
+                  variant={category === "personal" ? "default" : "outline"}
+                  onClick={() => setCategory("personal")}
+                  className={`flex-grow sm:flex-grow-0 ${
+                    category === "personal" ? "bg-gradient-to-r from-personal to-personal-light" : ""
+                  }`}
+                >
+                  Personnel
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label>Type de période</Label>
               <div className="flex flex-wrap gap-2">
                 {periodTypes.map((period) => (
@@ -174,9 +170,11 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
                     variant={selectedType === period.value ? "default" : "outline"}
                     onClick={() => {
                       setSelectedType(period.value as typeof selectedType);
-                      setSelectedParentId(null); // Reset parent selection when period type changes
+                      setSelectedParentId(null);
                     }}
-                    className="flex-grow sm:flex-grow-0"
+                    className={`flex-grow sm:flex-grow-0 ${
+                      selectedType === period.value ? "bg-gradient-to-r from-professional to-personal" : ""
+                    }`}
                   >
                     {period.label}
                   </Button>
@@ -196,8 +194,8 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
                       className={`flex-grow sm:flex-grow-0 ${
                         selectedParentId === goal.id
                           ? goal.category === "professional"
-                            ? "bg-professional"
-                            : "bg-personal"
+                            ? "bg-gradient-to-r from-professional to-professional-light"
+                            : "bg-gradient-to-r from-personal to-personal-light"
                           : ""
                       }`}
                     >
@@ -211,25 +209,48 @@ export const CreateTaskDialog = ({ open, onOpenChange, type = "daily" }: CreateT
             {selectedType === "daily" && (
               <div className="space-y-2">
                 <Label>Date de début</Label>
-                <Calendar
-                  mode="single"
-                  selected={selectedStartDate}
-                  onSelect={setSelectedStartDate}
-                  className="rounded-md border"
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !selectedStartDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedStartDate ? (
+                        format(selectedStartDate, "PPP", { locale: fr })
+                      ) : (
+                        <span>Choisir une date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={selectedStartDate}
+                      onSelect={setSelectedStartDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
           </div>
-
-          <div className="flex justify-end gap-2 py-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleSubmit}>
-              Créer
-            </Button>
-          </div>
         </ScrollArea>
+
+        <div className="flex justify-center gap-2 p-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Annuler
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            className="bg-gradient-to-r from-professional to-personal"
+          >
+            Créer
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
