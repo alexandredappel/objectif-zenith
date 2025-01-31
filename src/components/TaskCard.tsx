@@ -59,6 +59,7 @@ export const TaskCard = ({ id, title, category, completed = false, onClick, type
     e.stopPropagation();
 
     try {
+      // Update parent goal
       const { error } = await supabase
         .from('goals')
         .update({ completed: !completed })
@@ -97,7 +98,7 @@ export const TaskCard = ({ id, title, category, completed = false, onClick, type
     e.stopPropagation();
 
     try {
-      // Update child goal
+      // First, update the child goal
       const { error: childError } = await supabase
         .from('goals')
         .update({ completed: !isCompleted })
@@ -105,7 +106,7 @@ export const TaskCard = ({ id, title, category, completed = false, onClick, type
 
       if (childError) throw childError;
 
-      // If unchecking a child, also uncheck the parent
+      // If we're unchecking a child, also uncheck the parent
       if (isCompleted) {
         const { error: parentError } = await supabase
           .from('goals')
@@ -115,6 +116,7 @@ export const TaskCard = ({ id, title, category, completed = false, onClick, type
         if (parentError) throw parentError;
       }
 
+      // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['goals'] });
 
       toast({
