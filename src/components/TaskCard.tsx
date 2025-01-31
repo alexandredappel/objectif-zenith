@@ -9,15 +9,13 @@ import { useToast } from "./ui/use-toast";
 interface TaskCardProps {
   id: string;
   title: string;
-  duration: number;
-  progress: number;
   category: 'professional' | 'personal';
   completed?: boolean;
   onClick?: () => void;
   type: 'quarterly' | 'monthly' | 'weekly' | 'daily';
 }
 
-export const TaskCard = ({ id, title, duration, category, completed = false, onClick, type }: TaskCardProps) => {
+export const TaskCard = ({ id, title, category, completed = false, onClick, type }: TaskCardProps) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -89,12 +87,23 @@ export const TaskCard = ({ id, title, duration, category, completed = false, onC
     e.stopPropagation();
 
     try {
-      const { error } = await supabase
+      // Update child goal
+      const { error: childError } = await supabase
         .from('goals')
         .update({ completed: !isCompleted })
         .eq('id', childId);
 
-      if (error) throw error;
+      if (childError) throw childError;
+
+      // If unchecking a child, also uncheck the parent
+      if (isCompleted) {
+        const { error: parentError } = await supabase
+          .from('goals')
+          .update({ completed: false })
+          .eq('id', id);
+
+        if (parentError) throw parentError;
+      }
 
       queryClient.invalidateQueries({ queryKey: ['goals'] });
 
@@ -127,7 +136,6 @@ export const TaskCard = ({ id, title, duration, category, completed = false, onC
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="text-white font-semibold mb-2">{title}</h3>
-          <div className="text-white/80 text-sm">{duration} min</div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-white font-medium">{completionPercentage}%</span>

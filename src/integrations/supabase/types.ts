@@ -15,7 +15,6 @@ export type Database = {
           completed: boolean | null
           created_at: string
           id: string
-          minutes: number
           parent_id: string | null
           start_date: string
           title: string
@@ -27,7 +26,6 @@ export type Database = {
           completed?: boolean | null
           created_at?: string
           id?: string
-          minutes: number
           parent_id?: string | null
           start_date: string
           title: string
@@ -39,7 +37,6 @@ export type Database = {
           completed?: boolean | null
           created_at?: string
           id?: string
-          minutes?: number
           parent_id?: string | null
           start_date?: string
           title?: string

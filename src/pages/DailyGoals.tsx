@@ -56,8 +56,6 @@ const DailyGoals = () => {
                       key={goal.id}
                       id={goal.id}
                       title={goal.title}
-                      duration={goal.minutes}
-                      progress={0}
                       category={goal.category as "professional" | "personal"}
                       completed={goal.completed}
                       onClick={() => handleGoalClick(goal)}
@@ -77,8 +75,6 @@ const DailyGoals = () => {
                       key={goal.id}
                       id={goal.id}
                       title={goal.title}
-                      duration={goal.minutes}
-                      progress={0}
                       category={goal.category as "professional" | "personal"}
                       completed={goal.completed}
                       onClick={() => handleGoalClick(goal)}

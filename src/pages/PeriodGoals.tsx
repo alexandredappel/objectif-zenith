@@ -6,6 +6,8 @@ import { EditTaskDialog } from "@/components/EditTaskDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskCard } from "@/components/TaskCard";
+import { format, startOfWeek, endOfWeek, getQuarter, setQuarter, startOfQuarter, endOfQuarter } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const PeriodGoals = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -37,6 +39,28 @@ const PeriodGoals = () => {
     setIsEditDialogOpen(true);
   };
 
+  const getCurrentPeriodLabel = () => {
+    const now = new Date();
+    
+    switch (currentPeriod) {
+      case "quarterly": {
+        const quarter = getQuarter(now);
+        const quarterStart = startOfQuarter(now);
+        const quarterEnd = endOfQuarter(now);
+        return `${format(quarterStart, 'MMMM', { locale: fr })} - ${format(quarterEnd, 'MMMM', { locale: fr })}`;
+      }
+      case "monthly":
+        return format(now, 'MMMM', { locale: fr });
+      case "weekly": {
+        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+        return `Du ${format(weekStart, 'dd/MM')} au ${format(weekEnd, 'dd/MM')}`;
+      }
+      default:
+        return "";
+    }
+  };
+
   const renderGoals = () => {
     if (isLoading) {
       return <p>Chargement...</p>;
@@ -57,8 +81,6 @@ const PeriodGoals = () => {
                   key={goal.id}
                   id={goal.id}
                   title={goal.title}
-                  duration={goal.minutes}
-                  progress={0}
                   category={goal.category as "professional" | "personal"}
                   completed={goal.completed}
                   onClick={() => handleGoalClick(goal)}
@@ -78,8 +100,6 @@ const PeriodGoals = () => {
                   key={goal.id}
                   id={goal.id}
                   title={goal.title}
-                  duration={goal.minutes}
-                  progress={0}
                   category={goal.category as "professional" | "personal"}
                   completed={goal.completed}
                   onClick={() => handleGoalClick(goal)}
@@ -106,11 +126,15 @@ const PeriodGoals = () => {
           className="w-full"
           onValueChange={(value) => setCurrentPeriod(value as "quarterly" | "monthly" | "weekly")}
         >
-          <TabsList className="w-full justify-start mb-6">
-            <TabsTrigger value="quarterly">Trimestriels</TabsTrigger>
-            <TabsTrigger value="monthly">Mensuels</TabsTrigger>
-            <TabsTrigger value="weekly">Hebdomadaires</TabsTrigger>
-          </TabsList>
+          <div className="flex justify-between items-center mb-6">
+            <TabsList className="justify-start">
+              <TabsTrigger value="quarterly">Trimestriels</TabsTrigger>
+              <TabsTrigger value="monthly">Mensuels</TabsTrigger>
+              <TabsTrigger value="weekly">Hebdomadaires</TabsTrigger>
+            </TabsList>
+            <span className="text-gray-600 font-medium">{getCurrentPeriodLabel()}</span>
+          </div>
+          
           <TabsContent value="quarterly">
             {renderGoals()}
           </TabsContent>
