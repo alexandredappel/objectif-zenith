@@ -44,19 +44,29 @@ export const TaskCard = ({
     enabled: type !== 'daily',
   });
 
-  // Calculate completion percentage
-  const completionPercentage = React.useMemo(() => {
-    if (!childGoals || childGoals.length === 0) return completed ? 100 : 0;
+  // Calculate completion percentage and status
+  const { completionPercentage, isFullyCompleted } = React.useMemo(() => {
+    if (!childGoals || childGoals.length === 0) {
+      return {
+        completionPercentage: completed ? 100 : 0,
+        isFullyCompleted: completed
+      };
+    }
     const completedGoals = childGoals.filter(goal => goal.completed).length;
-    return Math.round((completedGoals / childGoals.length) * 100);
+    const percentage = Math.round((completedGoals / childGoals.length) * 100);
+    return {
+      completionPercentage: percentage,
+      isFullyCompleted: percentage === 100 || completed
+    };
   }, [childGoals, completed]);
 
   console.log('TaskCard rendered:', { 
     id, 
     title, 
-    completed, 
+    completed,
     childGoals, 
     completionPercentage,
+    isFullyCompleted,
     type 
   });
 
@@ -74,9 +84,9 @@ export const TaskCard = ({
     <Card 
       className={`w-full p-4 hover:shadow-lg transition-shadow cursor-pointer relative ${
         category === 'professional' ? 
-          completed ? 'bg-gradient-to-r from-professional/50 to-professional-light/50' :
+          isFullyCompleted ? 'bg-gradient-to-r from-professional/50 to-professional-light/50' :
           'bg-gradient-to-r from-professional to-professional-light' : 
-        completed ? 'bg-gradient-to-r from-personal/50 to-personal-light/50' :
+        isFullyCompleted ? 'bg-gradient-to-r from-personal/50 to-personal-light/50' :
         'bg-gradient-to-r from-personal to-personal-light'
       }`}
       onClick={onClick}
@@ -90,10 +100,10 @@ export const TaskCard = ({
           <button
             onClick={handleCompletionToggle}
             className={`rounded-full p-2 transition-colors ${
-              completed ? 'bg-white' : 'bg-white/20 hover:bg-white/30'
+              isFullyCompleted ? 'bg-white' : 'bg-white/20 hover:bg-white/30'
             }`}
           >
-            <Check className={`h-4 w-4 ${completed ? 'text-green-500' : 'text-white'}`} />
+            <Check className={`h-4 w-4 ${isFullyCompleted ? 'text-green-500' : 'text-white'}`} />
           </button>
         </div>
       </div>
